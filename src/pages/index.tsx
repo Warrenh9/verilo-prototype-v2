@@ -1,0 +1,10 @@
+export { NotFound as NotFoundPage } from "./Placeholder";
+export { OverviewPage } from "./Overview";
+export { AgentsPage } from "./Agents";
+export { AgentDetailPage } from "./AgentDetail";
+export { RuleCardsPage } from "./RuleCards";
+export { ReviewsPage } from "./Reviews";
+export { EvidencePage } from "./Evidence";
+export { TestRunsPage } from "./TestRuns";
+export { IntegrationsPage } from "./Integrations";
+export { SettingsPage } from "./Settings";
