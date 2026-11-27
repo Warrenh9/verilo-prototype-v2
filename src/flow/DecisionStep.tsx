@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleCheck, CircleX, FileCheck2, FileDown, Send } from "lucide-react";
-import { Badge, Button, Callout, Card, ConfidenceBar, DataTable, Drawer, KeyValue, Modal, Mono, ScoreRing, StatusPill, Switch, Term, useToast } from "../components/ui";
+import { findingsFrom } from "./findings";
+import { Badge, Button, Callout, Card, ConfidenceBar, DataTable, Drawer, KeyValue, Modal, Mono, ScoreRing, StatusPill, Switch, useToast } from "../components/ui";
 import { DecisionPill } from "../components/domain";
 import { NonInferiorityChart, PanelChart } from "../components/charts";
 import { useQualify } from "../context/QualifyContext";
@@ -21,7 +22,8 @@ export function DecisionStep() {
   const q = useQualify();
   const nav = useNavigate();
   const toast = useToast();
-  const [simulate, setSimulate] = useState(false);
+  const { simulate, setSimulate } = q;
+  const [detail, setDetail] = useState(false);
   const [open, setOpen] = useState<CaseRow | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
   const [approver, setApprover] = useState(nominatedReviewers[0].name);
@@ -35,6 +37,7 @@ export function DecisionStep() {
     return scoreRun(input);
   }, [rows, simulate]);
   const reject = result.decision === "Reject";
+  const findings = useMemo(() => findingsFrom(rows), [rows]);
 
   useEffect(() => {
     if (q.sealed) return;
@@ -56,26 +59,48 @@ export function DecisionStep() {
             <div className="text-[13px] text-text-3">ClaimDesk Agent · {runMeta.candidate.label} vs {runMeta.current.label}</div>
             <h2 className="mt-1 text-[20px]">{reject ? "Reject the change" : "Accept the change, with a condition"}</h2>
             <p className="mt-2 max-w-2xl text-[13px]">
-              Score <Mono>{result.rawScore}</Mono> out of 100{!result.capped && <>, bootstrap 95% CI <Mono>{result.ciDetail[0]}–{result.ciDetail[1]}</Mono></>}.
-              {" "}Measured evidence with a confidence range for your model validation — not a certificate of safety.
+              {result.capped
+                ? <>Score capped at <b>{result.score}</b> out of 100 because of one confirmed critical error. Before the cap it would have scored {result.rawScore}.</>
+                : <>Score <b>{result.score}</b> out of 100, likely between {result.displayRange[0]} and {result.displayRange[1]}{detail && <> (bootstrap 95% CI <Mono>{result.ciDetail[0]}–{result.ciDetail[1]}</Mono>)</>}.</>}
+              {" "}This is measured evidence with a confidence range for your model validation, not a guarantee.
             </p>
-            {reject && <div className="mt-3"><Callout tone="danger" title="One confirmed critical error caps the score, whatever the other 999 cases show.">Trap C1: the candidate declined a covered flood claim under clause 4.2(c), which Endorsement 07 deleted. Underpaid $84,400.00.</Callout></div>}
+            {reject && <div className="mt-3"><Callout tone="danger" title="One confirmed critical error caps the score, whatever the other 999 cases show.">Model 5.0 declined a covered flood claim under clause 4.2(c), which Endorsement 07 deleted. The customer would have been underpaid $84,400.00.</Callout></div>}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Button variant="primary" icon={FileCheck2} onClick={() => nav("/evidence")}>Open evidence pack</Button>
               <Button icon={FileDown} onClick={() => nav("/report")}>Download board report</Button>
               <Button icon={Send} onClick={() => setSendOpen(true)}>Send to nominated approver</Button>
             </div>
             <div className="mt-4 rounded-lg border border-border bg-bg-subtle px-4 py-3">
-              <Switch checked={simulate} onChange={setSimulate} label={<span><span className="font-medium text-text">Simulate one critical failure</span> — swaps in the trap C1 wrongful decline ($0 instead of $84,400) and re-scores</span>} />
+              <Switch checked={simulate} onChange={setSimulate} label={<span><span className="font-medium text-text">Simulate one critical failure</span>: the new model wrongly declines the covered flood claim ($0 instead of $84,400), and everything is re-scored</span>} />
             </div>
           </div>
         </div>
       </Card>
 
-      {result.conditions.map((c) => !reject && <Callout key={c} tone="warning" title="Condition">{c} <span className="text-text-3">(3 of the 5 high-severity failures are trap E2.)</span></Callout>)}
+      {result.conditions.map((c) => !reject && <Callout key={c} tone="warning" title="Condition">{c} <span className="text-text-3">(3 of the 5 serious errors were this kind of claim.)</span></Callout>)}
+
+      <Card title="What went wrong" actions={<span className="text-[12px] text-text-3">From the {rows.length} sample cases below · amounts checked by code</span>}>
+        <table className="w-full text-[13px]">
+          <thead className="text-left text-text-3"><tr><th className="pb-2 font-medium">Finding</th><th className="pb-2 font-medium">Policy clause</th><th className="pb-2 font-medium">Impact</th><th className="pb-2 font-medium">Severity</th></tr></thead>
+          <tbody>
+            {findings.map((x) => (
+              <tr key={x.trap} className="border-t border-border align-top">
+                <td className="py-2.5 pr-4 text-text">{x.finding}{x.count > 1 && <span className="text-text-3"> · {x.count} cases</span>}</td>
+                <td className="py-2.5 pr-4 whitespace-nowrap"><Mono>{x.clause}</Mono></td>
+                <td className="py-2.5 pr-4">{x.impact}</td>
+                <td className="py-2.5"><StatusPill tone={x.severity === "critical" ? "danger" : "warning"}>{SEV[x.severity]}</StatusPill></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      <div className="flex justify-end">
+        <Switch checked={detail} onChange={setDetail} label="Show statistical detail" />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card title="Gates">
+        <Card title="Pass/fail checks">
           <ul className="space-y-3">
             {result.gates.map((g) => (
               <li key={g.key} className="flex gap-3">
@@ -83,25 +108,26 @@ export function DecisionStep() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-[14px] font-medium text-text">{g.label}<StatusPill tone={g.pass ? "success" : "danger"}>{g.pass ? "Pass" : "Fail"}</StatusPill></div>
                   <div className="text-[13px] text-text-3">{g.detail}</div>
+                  {detail && <div className="mt-0.5 font-mono text-[11px] text-text-3">{g.technical}</div>}
                 </div>
               </li>
             ))}
           </ul>
         </Card>
-        <Card title="Sub-scores">
+        <Card title="Score breakdown">
           {claimDeskRun.subScores.map((s) => (
-            <ConfidenceBar key={s.key} label={s.label} weight={`×${s.weight}`} value={Number(s.value)} low={Number(s.ciLow)} high={Number(s.ciHigh)} min={0.8} max={1} />
+            <ConfidenceBar key={s.key} label={s.label} weight={detail ? `×${s.weight}` : undefined} value={Number(s.value)} low={Number(s.ciLow)} high={Number(s.ciHigh)} min={0.8} max={1} format={detail ? undefined : (v) => `${(v * 100).toFixed(1)}%`} />
           ))}
-          <p className="mt-2 text-[12px] text-text-3">Point estimate with 95% interval. n from 180 (escalation) to 944 (regression pairs).</p>
+          <p className="mt-2 text-[12px] text-text-3">{detail ? "Point estimate with 95% interval; weights shown after each label. n from 180 (escalation) to 944 (regression pairs)." : "Share of cases right in each area. The shaded bar is the likely range."}</p>
         </Card>
       </div>
 
-      <Card title={<Term explain="Non-inferiority: the new version is shown to be no worse than the current one, within a set margin.">Non-inferiority vs current version</Term>}>
-        <NonInferiorityChart diff={result.nonInferiority.diffPp} lower={result.nonInferiority.lowerPp} se={result.nonInferiority.sePp} margin={result.nonInferiority.marginPp} />
-        <div className="mt-3 text-[13px]">Current passed / candidate failed: <b className="tnum">22</b> · reverse: <b className="tnum">18</b> · McNemar p = <Mono>{result.nonInferiority.pValue.toFixed(2)}</Mono> · <span className="text-warning">non-inferior, narrowly</span></div>
+      <Card title="Is Model 5.0 at least as good as Model 4.1?">
+        <NonInferiorityChart detail={detail} diff={result.nonInferiority.diffPp} lower={result.nonInferiority.lowerPp} se={result.nonInferiority.sePp} margin={result.nonInferiority.marginPp} />
+        <div className="mt-3 text-[13px]">On the same 1,000 cases, Model 4.1 got <b className="tnum">22</b> right that Model 5.0 got wrong, and Model 5.0 got <b className="tnum">18</b> right that 4.1 got wrong. <span className="text-warning">Yes, but only just.</span>{detail && <> McNemar p = <Mono>{result.nonInferiority.pValue.toFixed(2)}</Mono>.</>}</div>
       </Card>
 
-      <Card title="Cases" padded={false} actions={<span className="text-[12px] text-text-3">Sample of {rows.length} from 1,000 · verdicts recomputed in code</span>}>
+      <Card title="Cases" padded={false} actions={<span className="text-[12px] text-text-3">Sample of {rows.length} from 1,000 · checked against the answer key in code</span>}>
         <DataTable<CaseRow> rows={rows} rowKey={(r) => r.id} onRowClick={setOpen} pageSize={12}
           filters={[
             { key: "trap", label: "Trap", options: [...new Set(rows.map((r) => r.trapType))].sort(), get: (r) => r.trapType },
@@ -113,8 +139,8 @@ export function DecisionStep() {
             { key: "trap", header: "Trap", render: (r) => <Badge>{r.trapType}</Badge> },
             { key: "title", header: "Scenario", render: (r) => <span className="text-text">{r.title}</span> },
             { key: "sev", header: "Severity", render: (r) => SEV[r.severity] },
-            { key: "verdict", header: "Code verdict", render: (r) => <span className={cn(!r.pass && r.outcome === "Fail" && "text-danger")}>{r.summary.length > 44 ? r.summary.slice(0, 42) + "…" : r.summary}</span> },
-            { key: "votes", header: "Votes", align: "right", render: (r) => runPanel(r.votes, r.critical).points.length },
+            { key: "verdict", header: "Result", render: (r) => <span className={cn(!r.pass && r.outcome === "Fail" && "text-danger")}>{r.summary}</span> },
+            { key: "votes", header: "AI reviews", align: "right", render: (r) => runPanel(r.votes, r.critical).points.length },
             { key: "out", header: "Outcome", nowrap: true, render: (r) => <DecisionPill label={r.outcome} /> },
           ]} />
       </Card>
@@ -125,7 +151,7 @@ export function DecisionStep() {
             <section><h3 className="mb-1 text-[13px] text-text-3">Case given to the agent</h3><p className="text-text">{open.prompt}</p><p className="mt-1 text-[12px] text-text-3">The answer key was not included.</p></section>
             <section><h3 className="mb-1 text-[13px] text-text-3">Agent's answer</h3><p className="rounded-md border border-border bg-bg-subtle p-3 text-text">{open.answerText}</p></section>
             <section>
-              <h3 className="mb-1 text-[13px] text-text-3">Code verdict</h3>
+              <h3 className="mb-1 text-[13px] text-text-3">Checked by code</h3>
               <KeyValue items={[
                 ...(open.key ? [{ k: "Answer key (computed)", v: open.key }] : []),
                 ...(open.answer ? [{ k: "Agent", v: open.answer }] : []),
@@ -135,7 +161,7 @@ export function DecisionStep() {
               ]} />
             </section>
             <section>
-              <h3 className="mb-2 text-[13px] text-text-3">Reviewer panel — judges reasoning only{open.critical ? " (critical case: three agreeing votes)" : ""}</h3>
+              <h3 className="mb-2 text-[13px] text-text-3">AI reviewers judge the reasoning only{open.critical ? " (critical case: needs three agreeing reviews)" : ""}</h3>
               <PanelChart votes={open.votes} critical={open.critical} />
               <ol className="mt-3 divide-y divide-border rounded-md border border-border">
                 {open.votes.map((v, i) => (

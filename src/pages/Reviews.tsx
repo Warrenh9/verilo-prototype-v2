@@ -6,6 +6,7 @@ import { useApp } from "../context/AppContext";
 import { reviewQueue, nominatedReviewers, type ReviewItem } from "../data/reviews";
 import { cannedCases } from "../data/cases";
 import type { Vote } from "../engine/panel";
+import { sd } from "../lib/demoClock";
 
 type Choice = ReviewItem["reviewsDone"][number]["decision"];
 const CHOICES: { v: Choice; help: string }[] = [
@@ -37,7 +38,7 @@ export function ReviewsPage() {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [note, setNote] = useState("");
   const [log, setLog] = useState<{ at: string; text: string }[]>([
-    { at: "12 Nov 2026, 08:55", text: "Priya Nandakumar (Claims Quality) recorded “Agree with key” on rv_103 — first of two reviewers" },
+    { at: sd("12 Nov 2026, 08:55"), text: "Priya Nandakumar (Claims Quality) recorded “Agree with key” on rv_103 — first of two reviewers" },
   ]);
   const item = items.find((x) => x.id === open);
   const remaining = (x: ReviewItem) => x.reviewersRequired - x.reviewsDone.length;

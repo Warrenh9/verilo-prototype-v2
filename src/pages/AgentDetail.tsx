@@ -6,6 +6,7 @@ import { ConnectionTest, DecisionPill, HealthDot, decisionTone } from "../compon
 import type { AgentVersion } from "../data/agents";
 import { runs, RUN_CASES, type Run } from "../data/runs";
 import { useApp } from "../context/AppContext";
+import { sd } from "../lib/demoClock";
 
 type Tab = "summary" | "versions" | "runs" | "connection" | "certification";
 
@@ -36,7 +37,7 @@ export function AgentDetailPage() {
 
       {tab === "summary" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {pending && <div className="lg:col-span-2"><Callout tone="warning" title="Model change pending">Cobaltline is moving ClaimDesk from Model 4.1 (retiring 15 Feb 2027) to Model 5.0. Decide by 16 Jan 2027.</Callout></div>}
+          {pending && <div className="lg:col-span-2"><Callout tone="warning" title="Model change pending">{sd("Cobaltline is moving ClaimDesk from Model 4.1 (retiring 15 Feb 2027) to Model 5.0. Decide by 16 Jan 2027.")}</Callout></div>}
           <Card title="Assurance">
             <KeyValue items={[
               { k: "Last decision", v: <DecisionPill label={a.lastDecision} /> },
@@ -106,7 +107,7 @@ export function AgentDetailPage() {
           <Card title="Vendor certification" highlight>
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <StatusPill tone="brand">{a.certification.status} · {certifiedV5 ? "Model 5.0" : a.certification.version}</StatusPill>
-              <span className="text-[13px] text-text-3">valid to {certifiedV5 ? "30 Nov 2027" : a.certification.validTo}</span>
+              <span className="text-[13px] text-text-3">valid to {certifiedV5 ? sd("30 Nov 2027") : a.certification.validTo}</span>
             </div>
             <p className="mb-4 max-w-2xl text-[13px]">
               {a.vendor} passed Verilo's locked standard suite for home claims on this version. This is independent assurance on a fixed suite, not a guarantee;
@@ -114,8 +115,8 @@ export function AgentDetailPage() {
             </p>
             <KeyValue items={[
               { k: "Certificate", v: <Link to="/certificate" className="inline-flex items-center gap-1 text-brand-ink hover:underline">{certifiedV5 ? "verilo.au/cert/cobaltline-claimdesk-5-0" : a.certification.link}<ExternalLink className="size-3.5" /></Link> },
-              { k: "Model 5.0", v: certifiedV5 ? <StatusPill tone="brand">Certified · valid to 30 Nov 2027</StatusPill> : <StatusPill tone="info">Certification pending</StatusPill> },
-              { k: "Model 4.1", v: "Certified · valid to 15 Feb 2027" },
+              { k: "Model 5.0", v: certifiedV5 ? <StatusPill tone="brand">Certified · valid to {sd("30 Nov 2027")}</StatusPill> : <StatusPill tone="info">Certification pending</StatusPill> },
+              { k: "Model 4.1", v: sd("Certified · valid to 15 Feb 2027") },
             ]} />
           </Card>
         ) : <Card><EmptyState title="No vendor certification" body="Certification applies to agents supplied through Verilo Connect. Your own qualification results are under Runs." /></Card>

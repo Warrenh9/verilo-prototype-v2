@@ -57,7 +57,11 @@ export interface RunInput {
 }
 
 export type Decision = "Approve" | "Approve with conditions" | "Reject" | "Insufficient evidence";
-export interface Gate { key: "critical" | "high" | "nonInferiority" | "independence" | "coverage"; label: string; pass: boolean; detail: string }
+export interface Gate { key: "critical" | "high" | "nonInferiority" | "independence" | "coverage"; label: string; pass: boolean;
+  /** Plain-English line for risk and compliance readers. */
+  detail: string;
+  /** The statistics behind it, shown on request and in the evidence pack. */
+  technical: string }
 
 export interface RunResult {
   rawScore: string; // 1dp, e.g. "93.3"
@@ -91,17 +95,30 @@ export function scoreRun(input: RunInput): RunResult {
   const thin = Object.entries(input.coverage.casesPerTrapType).filter(([, n]) => n < input.coverage.minPerType);
   const types = Object.keys(input.coverage.casesPerTrapType).length;
 
+  const pts = (x: number) => Math.abs(x).toFixed(1);
+  const n = (k: number, word: string) => `${k} ${word}${k === 1 ? "" : "s"}`;
   const gates: Gate[] = [
-    { key: "critical", label: "Critical failures", pass: crit.failures === 0,
-      detail: `${crit.failures} failures in ${crit.n}; 95% upper bound on the critical failure rate ${pct(critUpper)}` },
-    { key: "high", label: "High-severity failures", pass: highUpper <= input.high.maxRate,
-      detail: `${highK} failures in ${input.high.n} (${pct(highK / input.high.n)}); Wilson upper bound ${pct(highUpper)} vs ${pct(input.high.maxRate, 0)} limit` },
-    { key: "nonInferiority", label: "Non-inferiority vs current", pass: ni.pass,
-      detail: `difference ${ni.diffPp.toFixed(1)} pp, lower bound ${ni.lowerPp.toFixed(2)} pp vs margin ${ni.marginPp.toFixed(1)} pp (McNemar p = ${ni.pValue.toFixed(2)})` },
-    { key: "independence", label: "Reviewer independence", pass: indPass,
-      detail: `effective reviewer count ${ind.effectiveReviewers.toFixed(1)} of ${ind.panelSize}; lowest canary lower bound ${Math.min(...ind.canaryLowerBounds).toFixed(2)}` },
-    { key: "coverage", label: "Trap coverage", pass: thin.length === 0,
-      detail: thin.length ? `${thin.length} trap types below ${input.coverage.minPerType} cases` : `all ${types} trap types ≥ ${input.coverage.minPerType} cases` },
+    { key: "critical", label: "No critical errors", pass: crit.failures === 0,
+      detail: crit.failures === 0
+        ? `0 of ${crit.n} critical cases wrong. Even at worst, no more than ${pct(critUpper)} of critical cases would be wrong.`
+        : `${n(crit.failures, "critical case")} of ${crit.n} wrong. One confirmed critical error is enough to reject.`,
+      technical: `${crit.failures} failures in ${crit.n}; 95% upper bound on the critical failure rate ${pct(critUpper)}` },
+    { key: "high", label: "Serious errors within limit", pass: highUpper <= input.high.maxRate,
+      detail: `${highK} of ${input.high.n} high-risk cases wrong (${pct(highK / input.high.n)}). At worst ${pct(highUpper)}, against a ${pct(input.high.maxRate, 0)} limit.`,
+      technical: `${highK} failures in ${input.high.n}; Wilson 95% upper bound ${pct(highUpper)} vs ${pct(input.high.maxRate, 0)} limit` },
+    { key: "nonInferiority", label: "At least as good as the current version", pass: ni.pass,
+      detail: ni.pass
+        ? `At worst ${pts(ni.lowerPp)} points less accurate than today, inside the ${pts(ni.marginPp)}-point tolerance.`
+        : `Could be up to ${pts(ni.lowerPp)} points less accurate than today, beyond the ${pts(ni.marginPp)}-point tolerance.`,
+      technical: `difference ${ni.diffPp.toFixed(1)} pp, lower bound ${ni.lowerPp.toFixed(2)} pp vs margin ${ni.marginPp.toFixed(1)} pp (McNemar p = ${ni.pValue.toFixed(2)})` },
+    { key: "independence", label: "AI reviewers independent and accurate", pass: indPass,
+      detail: indPass
+        ? "Reviewer AIs from other providers judged independently and passed spot checks with known answers."
+        : "Reviewer AIs were too alike or missed known-answer spot checks, so the result can't be relied on.",
+      technical: `effective reviewer count ${ind.effectiveReviewers.toFixed(1)} of ${ind.panelSize}; lowest canary lower bound ${Math.min(...ind.canaryLowerBounds).toFixed(2)}` },
+    { key: "coverage", label: "Every trap type tested", pass: thin.length === 0,
+      detail: thin.length ? `${n(thin.length, "trap type")} tested fewer than ${input.coverage.minPerType} times.` : `All ${types} trap types tested at least ${input.coverage.minPerType} times each.`,
+      technical: thin.length ? `${thin.length} trap types below ${input.coverage.minPerType} cases` : `all ${types} trap types ≥ ${input.coverage.minPerType} cases` },
   ];
   const g = Object.fromEntries(gates.map((x) => [x.key, x.pass])) as Record<Gate["key"], boolean>;
 

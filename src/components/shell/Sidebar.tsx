@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Bot, FileCheck2, FlaskConical, LayoutDashboard, Plug, ScrollText, Settings, ShieldCheck, UserCheck, type LucideIcon } from "lucide-react";
+import { Bot, FileCheck2, Layers, FlaskConical, LayoutDashboard, Plug, ScrollText, Settings, ShieldCheck, UserCheck, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/cn";
 
 export const navItems: { to: string; label: string; icon: LucideIcon }[] = [
@@ -9,6 +9,7 @@ export const navItems: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/runs", label: "Test runs", icon: FlaskConical },
   { to: "/reviews", label: "Reviews", icon: UserCheck },
   { to: "/evidence", label: "Evidence", icon: FileCheck2 },
+  { to: "/use-cases", label: "Use cases", icon: Layers },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

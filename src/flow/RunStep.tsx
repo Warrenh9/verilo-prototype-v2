@@ -17,7 +17,7 @@ const LOG_TEMPLATES = [
   (n: string, lane: string) => `[${lane}] case_${n} get_policy(TMI-HOME-v3) → fixture`,
   (n: string, lane: string) => `[${lane}] case_${n} get_claim_documents → 3 documents`,
   (n: string, lane: string) => `[${lane}] case_${n} calculate_settlement → recorded`,
-  (n: string, lane: string) => `[${lane}] case_${n} post_payment → STUBBED · recorded, not paid`,
+  (n: string, lane: string) => `[${lane}] case_${n} post_payment → BLOCKED · recorded, nothing paid`,
   (n: string, lane: string) => `[${lane}] case_${n} answer received · key withheld from agent`,
 ];
 
@@ -59,11 +59,12 @@ export function RunStep() {
             {suites.map((s) => {
               const on = s.id === q.suiteId;
               return (
-                <button key={s.id} role="radio" aria-checked={on} onClick={() => q.setSuiteId(s.id)}
-                  className={cn("rounded-lg border p-4 text-left", on ? "border-ink ring-1 ring-ink" : "border-border hover:bg-bg-muted")}>
+                <button key={s.id} role="radio" aria-checked={on} disabled={s.id !== "full"} onClick={() => q.setSuiteId(s.id)}
+                  title={s.id !== "full" ? "Runs automatically on its schedule. This demo shows the full qualification." : undefined}
+                  className={cn("rounded-lg border p-4 text-left", on ? "border-ink ring-1 ring-ink" : "border-border", s.id !== "full" && "cursor-not-allowed opacity-50")}>
                   <div className="flex items-center justify-between"><span className="font-medium text-text">{s.name}</span><span className="font-display text-[18px] font-semibold text-text tnum">{s.cases.toLocaleString()}</span></div>
                   <div className="mt-1 text-[13px] text-text-3">{s.use}</div>
-                  <div className="mt-1 text-[12px] text-text-3">{s.duration}</div>
+                  <div className="mt-1 text-[12px] text-text-3">{s.id === "full" ? s.duration : `${s.duration} · runs on its schedule`}</div>
                 </button>
               );
             })}
@@ -97,29 +98,29 @@ export function RunStep() {
           <Metric label="Cases created" value={Math.round(N * gen).toLocaleString()} />
           <Metric label="Critical cases" value={Math.round(130 * scale * gen)} />
           <Metric label="Trap types" value={Math.round(18 * gen)} />
-          <div className="mt-3 text-[12px] text-text-3"><Term explain="The seed is hashed and recorded before any case is generated, then revealed afterwards so an auditor can check the cases weren't chosen after the fact.">Seed commitment</Term></div>
+          <div className="mt-3 text-[12px] text-text-3"><Term explain="The test set is locked (its seed is hashed and recorded) before any case is generated, then revealed afterwards so an auditor can check the cases weren't picked after the fact.">Test set locked before the run</Term></div>
           <Mono className="block break-all text-[11px]">{gen > 0 ? commit : "—"}</Mono>
         </PhaseCard>
 
         <PhaseCard n={2} title="Re-run" icon={Bot} p={Math.min(cur, cand)}>
           <Lane label={`Current · ${v.current.label}`} p={cur} n={N} />
           <Lane label={`Candidate · ${v.candidate.label}`} p={cand} n={N} />
-          <p className="mt-2 text-[12px] text-text-3"><ShieldCheck className="mr-1 inline size-3.5 text-brand-ink" aria-hidden />Side-effecting tools are stubbed.</p>
+          <p className="mt-2 text-[12px] text-text-3"><ShieldCheck className="mr-1 inline size-3.5 text-brand-ink" aria-hidden />Payments and other real actions are blocked: nothing real moves.</p>
         </PhaseCard>
 
         <PhaseCard n={3} title="Check" icon={Calculator} p={chk}>
           <Metric label="Numbers checked by code" value={Math.round(600 * scale * chk).toLocaleString()} />
-          <Metric label="Reasoning panel votes" value={Math.round(2731 * scale * chk).toLocaleString()} />
+          <Metric label="AI reasoning reviews" value={Math.round(2731 * scale * chk).toLocaleString()} />
           <Metric label="Sent to nominated reviewers" value={Math.round(16 * scale * chk)} icon={UserCheck} />
           <Metric label="Settled without a human" value={chk > 0 ? "98.4%" : "—"} />
         </PhaseCard>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
-        <Card title="Harness log" actions={<Badge tone="info">Live</Badge>}>
+        <Card title="Test log" actions={<Badge tone="info">Live</Badge>}>
           <div className="h-[232px] overflow-hidden rounded-md border border-border bg-bg-subtle p-3 font-mono text-[12px] leading-6" aria-live="off">
             {logLines.length === 0 ? <span className="text-text-3">Waiting for cases…</span> : logLines.map((l, i) => (
-              <div key={i} className={cn("truncate", l.includes("STUBBED") ? "text-warning" : "text-text-2")}>{l}</div>
+              <div key={i} className={cn("truncate", l.includes("BLOCKED") ? "text-warning" : "text-text-2")}>{l}</div>
             ))}
           </div>
         </Card>
@@ -127,7 +128,7 @@ export function RunStep() {
           <div className="font-display text-[30px] font-semibold text-text tnum">US${cost}</div>
           <div className="mb-3 text-[13px] text-text-3">of US${runMeta.aiCheckingCapUsd} cap · about US$20 per 1,000 cases</div>
           <ProgressBar value={Number(cost)} max={30} label="AI checking cost against cap" />
-          <p className="mt-3 text-[12px] text-text-3">Reviewer agents from Family A and Family B only. The agent's own family (Family C) is excluded.</p>
+          <p className="mt-3 text-[12px] text-text-3">Reviewer AIs come from two other providers. The provider behind the agent's own model is excluded.</p>
         </Card>
       </div>
       <div className="flex items-center gap-2 text-[12px] text-text-3"><Hash className="size-3.5" aria-hidden />Every step is written to a hash-chained evidence ledger.</div>

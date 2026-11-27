@@ -1,5 +1,6 @@
 import type { RunInput } from "../engine/scorer";
 import { trapTypes } from "./suite";
+import { sd } from "../lib/demoClock";
 
 /** ClaimDesk Model 5.0 vs 4.1, model-change mode (BRIEF §5). The score is computed from this, never typed. */
 export const claimDeskRun: RunInput = {
@@ -24,14 +25,14 @@ export const claimDeskRun: RunInput = {
 };
 
 export const runMeta = {
-  id: "run_2026-11-12_cd50",
+  id: sd("run_2026-11-12_cd50"),
   agent: "ClaimDesk Agent",
   current: { label: "Current · Model 4.1", snapshot: "model-4.1-2026-03-02" },
   candidate: { label: "Candidate · Model 5.0", snapshot: "model-5.0-2026-10-14" },
   ruleCard: "TMI-HOME-v3 + END-07",
   suite: "Full qualification · 1,000 cases",
-  seed: "tmi-claimdesk-2026-11-12-5c1e9a",
+  seed: sd("tmi-claimdesk-2026-11-12-5c1e9a"),
   aiCheckingCostUsd: "19.84",
   aiCheckingCapUsd: "30.00",
-  evidencePack: "ep_2026-11-12_7a3d",
+  evidencePack: sd("ep_2026-11-12_7a3d"),
 };

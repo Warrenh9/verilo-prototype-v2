@@ -6,12 +6,14 @@ import { agents, upcomingChanges } from "../data/agents";
 import { runs, RUN_CASES, type Run } from "../data/runs";
 import { reviewQueue } from "../data/reviews";
 import { useApp } from "../context/AppContext";
+import { noYear, sd } from "../lib/demoClock";
 
 export function OverviewPage() {
   const nav = useNavigate();
   const { persona, workspace } = useApp();
   const underAssurance = agents.filter((a) => !a.sandbox).length;
-  const thisMonth = runs.filter((r) => r.iso.startsWith("2026-11")).length;
+  const runDay = Date.parse(sd("2026-11-12"));
+  const last30 = runs.filter((r) => { const t = Date.parse(r.iso); return t <= runDay && runDay - t <= 30 * 86_400_000; }).length;
   const canRun = persona.can.runQualification && workspace.id === "tallowood";
 
   return (
@@ -19,15 +21,15 @@ export function OverviewPage() {
       <PageHeader title="Overview" description={`Independent assurance for the AI agents ${workspace.name} relies on.`} />
       <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatTile label="Agents under assurance" value={underAssurance} icon={Bot} hint="1 change pending" />
-        <StatTile label="Runs this month" value={thisMonth} icon={FlaskConical} hint="November 2026" />
+        <StatTile label="Runs in the last 30 days" value={last30} icon={FlaskConical} hint="Scheduled and change-triggered" />
         <StatTile label="Open reviews" value={reviewQueue.length} icon={UserCheck} tone="warning" hint="1 critical" />
-        <StatTile label="Next forced model change" value="15 Feb 2027" icon={CalendarClock} hint="Model 4.1 retires" />
+        <StatTile label="Next forced model change" value={sd("15 Feb 2027")} icon={CalendarClock} hint="Model 4.1 retires" />
       </div>
 
       <div className="mb-6">
         <Callout tone="warning" title="Model change detected"
           action={<Button variant="primary" icon={Play} onClick={() => nav("/qualify/connect")} disabled={!canRun} disabledReason="Your role can view results but not start a qualification">Start qualification</Button>}>
-          Cobaltline has announced ClaimDesk Agent moves from Model 4.1 to Model 5.0. Model 4.1 retires 15 Feb 2027. Decide whether to accept the change by 16 Jan 2027.
+          {sd("Cobaltline has announced ClaimDesk Agent moves from Model 4.1 to Model 5.0. Model 4.1 retires 15 Feb 2027. Decide whether to accept the change by 16 Jan 2027.")}
         </Callout>
       </div>
 
@@ -38,7 +40,7 @@ export function OverviewPage() {
               { key: "agent", header: "Agent", render: (r) => <span className="font-medium text-text">{r.agent}</span> },
               { key: "type", header: "Run", nowrap: true, render: (r) => <span>{r.type} <span className="text-text-3 tnum">· {RUN_CASES[r.type].toLocaleString()}</span></span> },
               { key: "trigger", header: "Trigger", nowrap: true, render: (r) => r.trigger },
-              { key: "date", header: "Started", nowrap: true, render: (r) => r.started.replace(" 2026", "") },
+              { key: "date", header: "Started", nowrap: true, render: (r) => noYear(r.started) },
               { key: "decision", header: "Decision", nowrap: true, render: (r) => r.decision && <DecisionPill label={r.decision} /> },
               { key: "score", header: "Score", align: "right", render: (r) => r.score ?? "—" },
             ]} />

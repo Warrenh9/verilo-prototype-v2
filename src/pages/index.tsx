@@ -8,3 +8,4 @@ export { EvidencePage } from "./Evidence";
 export { TestRunsPage } from "./TestRuns";
 export { IntegrationsPage } from "./Integrations";
 export { SettingsPage } from "./Settings";
+export { UseCasesPage } from "./UseCases";

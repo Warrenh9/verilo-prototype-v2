@@ -1,4 +1,5 @@
 import type { RuleCard } from "../engine/types";
+import { sd } from "../lib/demoClock";
 
 /** Policy clauses, BRIEF §5. */
 export const policyDocs = [
@@ -74,8 +75,8 @@ export const demoRuleCard: RuleCard = {
 
 export const signature = {
   signer: "Head of Home Claims, Tallowood Mutual",
-  signedOn: "4 Nov 2026",
-  signedAt: "2026-11-04T10:12:00+11:00",
+  signedOn: sd("4 Nov 2026"),
+  signedAt: sd("2026-11-04T10:12:00+11:00"),
 };
 
 /** Scripted second-extractor cross-check: one difference, resolved by the policy owner. */
@@ -97,9 +98,9 @@ export const crossCheck = {
 
 /** Ruled-card versions for the Rule cards page. */
 export const ruleCards = [
-  { id: "rc_tmi_home_v3_end07", name: "Tallowood Home v3 + Endorsement 07", version: "3.07", status: "Signed" as const, signer: "Head of Home Claims, Tallowood Mutual", date: "4 Nov 2026", agents: ["ClaimDesk Agent", "Coverage Triage Agent"] },
-  { id: "rc_tmi_home_v3", name: "Tallowood Home v3", version: "3.00", status: "Signed" as const, signer: "Head of Home Claims, Tallowood Mutual", date: "12 Dec 2023", agents: [], superseded: true },
-  { id: "rc_tmi_motor_v2", name: "Tallowood Motor v2", version: "2.01", status: "Signed" as const, signer: "Head of Motor Claims, Tallowood Mutual", date: "18 Aug 2026", agents: ["Motor Settlement Agent"] },
+  { id: "rc_tmi_home_v3_end07", name: "Tallowood Home v3 + Endorsement 07", version: "3.07", status: "Signed" as const, signer: "Head of Home Claims, Tallowood Mutual", date: sd("4 Nov 2026"), agents: ["ClaimDesk Agent", "Coverage Triage Agent"] },
+  { id: "rc_tmi_home_v3", name: "Tallowood Home v3", version: "3.00", status: "Signed" as const, signer: "Head of Home Claims, Tallowood Mutual", date: sd("12 Dec 2023"), agents: [], superseded: true },
+  { id: "rc_tmi_motor_v2", name: "Tallowood Motor v2", version: "2.01", status: "Signed" as const, signer: "Head of Motor Claims, Tallowood Mutual", date: sd("18 Aug 2026"), agents: ["Motor Settlement Agent"] },
   { id: "rc_tmi_onboarding_v1", name: "Member onboarding procedures v1", version: "1.00", status: "Awaiting signature" as const, signer: "—", date: "—", agents: ["Member Onboarding Agent"] },
   { id: "rc_tmi_contents_v1", name: "Tallowood Contents v1 (draft)", version: "0.3", status: "Draft" as const, signer: "—", date: "—", agents: [] },
 ];

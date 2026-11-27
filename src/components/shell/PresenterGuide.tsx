@@ -4,32 +4,37 @@ import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Presentation } from "luc
 import { useApp } from "../../context/AppContext";
 import { useQualify } from "../../context/QualifyContext";
 import type { WorkspaceId } from "../../data/personas";
+import { sd } from "../../lib/demoClock";
 
 interface Stop { path: string; title: string; points: string[]; workspace: WorkspaceId }
 export const STOPS: Stop[] = [
   { path: "/", workspace: "tallowood", title: "The trigger", points: [
     "Tallowood relies on Cobaltline's ClaimDesk Agent to decide home claims.",
-    "Cobaltline is swapping the model underneath: 4.1 retires 15 Feb 2027. Nobody independent checks the new one still gets it right.",
+    sd("Cobaltline is swapping the model underneath: 4.1 retires 15 Feb 2027.")+" Nobody independent checks the new one still gets it right.",
     "APRA's April 2026 letter expects continuous assurance, not point-in-time samples." ] },
   { path: "/qualify/connect", workspace: "tallowood", title: "1 · Connect", points: [
     "Current Model 4.1 vs candidate Model 5.0, both pinned to exact snapshots.",
     "Connected through Cobaltline's plug-in. Test connection: post_payment is stubbed — nothing real moves." ] },
   { path: "/qualify/rules", workspace: "tallowood", title: "2 · Rules", points: [
-    "Tallowood's own wording and Endorsement 07, as a rule card. A second AI from a different provider cross-checked it.",
-    "The one difference — flood — was resolved and signed by the policy owner. SHA-256 recorded.",
-    "Load documents: Home v3 alone flips the flood claim to a decline. Same agent answer, different signed rules." ] },
+    "Tallowood's own wording and Endorsement 07, drafted into a rule card. A second AI from a different provider extracted it independently.",
+    "They disagree on flood. As the policy owner, click 'Flood is covered', then Sign: the card is fingerprinted and the run unlocks.",
+    "Optional: Load documents. Home v3 alone flips the flood claim to a decline. Same agent answer, different signed rules." ] },
   { path: "/qualify/run", workspace: "tallowood", title: "3 · Run", points: [
     "1,000 fresh cases, 130 critical, 18 trap types. Seed committed before generation.",
     "Both versions answer the same cases. The answer key never reaches the agent.",
     "Code checks every number; reviewer agents judge reasoning; ~US$20 of AI checking." ] },
   { path: "/qualify/decision", workspace: "tallowood", title: "4 · Decision", points: [
-    "93, likely 92–95: approve with a condition — missing quotes or proof get human checks for 60 days.",
-    "Non-inferior, narrowly. Open a case to see how the reviewer panel settles.",
-    "Flip 'Simulate one critical failure': one wrongful decline caps the score at 59 and rejects." ] },
+    "93, likely 92–95: approve with a condition. Claims missing a quote or proof get human checks for 60 days.",
+    "'What went wrong' lists each finding with its clause and dollar impact. Model 5.0 is at least as good as 4.1, but only just.",
+    "Flip 'Simulate one critical failure': one wrongful decline caps the score at 59 and rejects. The board report follows." ] },
   { path: "/evidence", workspace: "tallowood", title: "Evidence", points: [
     "Every step is hash-chained. Replay reproduces the identical score hash.",
     "Tamper test: edit one entry and verification breaks from there on.",
     "Mapped to AIUC-1, ISO/IEC 42001 and APRA CPS 230; board report in one click." ] },
+  { path: "/use-cases", workspace: "tallowood", title: "Beyond claims", points: [
+    "Same four steps for any agent whose decisions have a right answer in your policies.",
+    "Customer service hardship, home-loan serviceability, KYC and PEP checks, complaints timeframes: one signed rule and one finding each.",
+    "Claims is built; the next build follows the first design partner's live agent." ] },
   { path: "/integrations", workspace: "cobaltline", title: "The vendor's side", points: [
     "Cobaltline installs the plug-in once and gates every release.",
     "Certifies on Verilo's locked suite — can't see tests or answers. Disputes go to a reviewer customers accept.",
@@ -48,9 +53,14 @@ export function PresenterGuide() {
   const idx = Math.max(0, STOPS.findIndex((s) => s.path === pathname || (s.path !== "/" && pathname.startsWith(s.path))));
   const stop = STOPS[idx];
 
-  const goTo = (i: number) => {
+  const goTo = async (i: number) => {
     const s = STOPS[i];
     if (!s) return;
+    // Jumping past Rules: resolve and sign the demo card so the flow doesn't bounce back.
+    if ((s.path === "/qualify/run" || s.path === "/qualify/decision") && q.selectedCard && q.selectedCard.status !== "Signed") {
+      q.setFloodResolved(true);
+      await q.signCard(q.selectedCard.card.id, "Head of Home Claims, Tallowood Mutual");
+    }
     if (s.path === "/qualify/decision" && q.runState !== "done") q.setRunState("done");
     setWorkspace(s.workspace);
     nav(s.path === "/agents/claimdesk" ? "/agents/claimdesk?tab=certification" : s.path);

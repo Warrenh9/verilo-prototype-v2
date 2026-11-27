@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { KeyRound, Plus, ShieldCheck } from "lucide-react";
-import { Avatar, Badge, Button, Card, KeyValue, Mono, PageHeader, StatusPill, Switch, Tabs, Timeline, useToast } from "../components/ui";
+import { Avatar, Badge, Button, Card, KeyValue, PageHeader, StatusPill, Switch, Tabs, Timeline, useToast } from "../components/ui";
 import { useApp } from "../context/AppContext";
 import { personas } from "../data/personas";
 import { nominatedReviewers } from "../data/reviews";
 import { standardsMapping } from "../data/evidence";
+import { sd } from "../lib/demoClock";
 
 type Tab = "members" | "reviewers" | "sso" | "keys" | "webhooks" | "region" | "standards" | "audit";
 
 const AUDIT = [
-  { at: "12 Nov 2026, 12:21", text: "Evidence pack ep_2026-11-12_7a3d sealed; copy sent to Tallowood audit" },
-  { at: "12 Nov 2026, 09:03", text: "Qualification run_2026-11-12_cd50 started by Dana Whitfield" },
-  { at: "12 Nov 2026, 08:55", text: "Priya Nandakumar recorded a review decision on rv_103" },
-  { at: "4 Nov 2026, 10:12", text: "Rule card Tallowood Home v3 + Endorsement 07 signed by Head of Home Claims" },
-  { at: "28 Oct 2026, 16:40", text: "Model change notice received from Cobaltline (ClaimDesk Model 5.0)" },
-  { at: "14 Oct 2026, 11:05", text: "API key vk_live_…8c21 created by Dana Whitfield" },
+  { at: sd("12 Nov 2026, 12:21"), text: sd("Evidence pack ep_2026-11-12_7a3d sealed; copy sent to Tallowood audit") },
+  { at: sd("12 Nov 2026, 09:03"), text: sd("Qualification run_2026-11-12_cd50 started by Dana Whitfield") },
+  { at: sd("12 Nov 2026, 08:55"), text: "Priya Nandakumar recorded a review decision on rv_103" },
+  { at: sd("4 Nov 2026, 10:12"), text: "Rule card Tallowood Home v3 + Endorsement 07 signed by Head of Home Claims" },
+  { at: sd("28 Oct 2026, 16:40"), text: "Model change notice received from Cobaltline (ClaimDesk Model 5.0)" },
+  { at: sd("14 Oct 2026, 11:05"), text: "API key vk_live_…8c21 created by Dana Whitfield" },
 ];
 
 export function SettingsPage() {
@@ -85,7 +86,7 @@ export function SettingsPage() {
             { k: "Decision ready", v: <Switch checked={hooks.decision} disabled={ro} onChange={(v) => setHooks({ ...hooks, decision: v })} label={<span className="sr-only">Decision ready</span>} /> },
             { k: "Review assigned", v: <Switch checked={hooks.review} disabled={ro} onChange={(v) => setHooks({ ...hooks, review: v })} label={<span className="sr-only">Review assigned</span>} /> },
             { k: "Model change detected", v: <Switch checked={hooks.change} disabled={ro} onChange={(v) => setHooks({ ...hooks, change: v })} label={<span className="sr-only">Model change detected</span>} /> },
-            { k: "Last delivery", v: <StatusPill tone="success">200 OK · 12 Nov 2026, 12:21</StatusPill> },
+            { k: "Last delivery", v: <StatusPill tone="success">200 OK · {sd("12 Nov 2026, 12:21")}</StatusPill> },
           ]} />
         </Card>
       )}
@@ -96,18 +97,18 @@ export function SettingsPage() {
             { k: "Region", v: <StatusPill tone="brand" icon={ShieldCheck}>Australia</StatusPill> },
             { k: "Cases, answers and evidence", v: "Stored and processed in Australia" },
             { k: "Reviewer-agent calls", v: "Routed through Australian endpoints" },
-            { k: "Retention", v: "[__] years (set to your policy)" },
+            { k: "Retention", v: "7 years (set to your record-keeping policy)" },
           ]} />
         </Card>
       )}
 
       {tab === "standards" && (
         <Card title="Standards mapping">
-          <p className="mb-3 text-[13px]">Evidence packs include a mapping to these standards. Control references are placeholders.</p>
+          <p className="mb-3 text-[13px]">Evidence packs include an illustrative mapping to these standards. Clause-level references are confirmed with your compliance team.</p>
           {standardsMapping.map((s) => (
             <div key={s.standard} className="flex items-center justify-between border-b border-border py-2.5 text-[13px] last:border-b-0">
               <span className="font-medium text-text">{s.standard}</span>
-              <span className="text-text-3">{s.items.length} topics · <Mono>[control ref]</Mono></span>
+              <span className="text-text-3">{s.items.length} topics mapped</span>
             </div>
           ))}
         </Card>

@@ -5,7 +5,7 @@ import { ComponentGallery } from "./pages/ComponentGallery";
 import { BoardReport } from "./pages/BoardReport";
 import { CertificatePage } from "./pages/Certificate";
 import {
-  OverviewPage, AgentsPage, AgentDetailPage, RuleCardsPage, TestRunsPage, ReviewsPage, EvidencePage, IntegrationsPage, SettingsPage, NotFoundPage,
+  OverviewPage, UseCasesPage, AgentsPage, AgentDetailPage, RuleCardsPage, TestRunsPage, ReviewsPage, EvidencePage, IntegrationsPage, SettingsPage, NotFoundPage,
 } from "./pages";
 
 export default function App() {
@@ -19,6 +19,7 @@ export default function App() {
         <Route path="runs" element={<TestRunsPage />} />
         <Route path="reviews" element={<ReviewsPage />} />
         <Route path="evidence" element={<EvidencePage />} />
+        <Route path="use-cases" element={<UseCasesPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="ui" element={<ComponentGallery />} />
