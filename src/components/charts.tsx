@@ -46,7 +46,7 @@ export function PanelChart({ votes, critical }: { votes: Vote[]; critical: boole
 }
 
 /** Non-inferiority: difference (candidate − current) with its 90% two-sided interval against the margin. */
-export function NonInferiorityChart({ diff, lower, se, margin }: { diff: number; lower: number; se: number; margin: number }) {
+export function NonInferiorityChart({ diff, lower, se, margin, detail = false }: { diff: number; lower: number; se: number; margin: number; detail?: boolean }) {
   const upper = diff + (diff - lower);
   const min = -2.5, max = 1.5;
   const pos = (v: number) => `${((v - min) / (max - min)) * 100}%`;
@@ -56,7 +56,7 @@ export function NonInferiorityChart({ diff, lower, se, margin }: { diff: number;
       <div className="relative h-24" role="img" aria-label={`Difference ${diff.toFixed(1)} percentage points, lower bound ${lower.toFixed(2)}, margin ${margin}`}>
         <div className="absolute inset-y-0 left-0 bg-danger-bg" style={{ width: pos(margin) }} />
         <div className="absolute inset-y-0 w-px border-l-2 border-dashed border-danger" style={{ left: pos(margin) }} />
-        <div className="absolute top-1 text-[11px] text-danger" style={{ left: `calc(${pos(margin)} - 92px)` }}>Margin {margin} pp</div>
+        <div className="absolute top-1 text-[11px] text-danger" style={{ left: `calc(${pos(margin)} - 92px)` }}>Tolerance {margin} pts</div>
         <div className="absolute inset-y-0 w-px bg-border-strong" style={{ left: pos(0) }} />
         <div className="absolute top-1/2 h-[3px] -translate-y-1/2 bg-ink" style={{ left: pos(lower), width: `calc(${pos(upper)} - ${pos(lower)})` }} />
         <div className="absolute top-1/2 h-4 w-[2px] -translate-y-1/2 bg-ink" style={{ left: pos(lower) }} />
@@ -69,7 +69,9 @@ export function NonInferiorityChart({ diff, lower, se, margin }: { diff: number;
         {ticks.map((t) => <span key={t} className="absolute -translate-x-1/2 font-mono text-[11px] text-text-3" style={{ left: pos(t) }}>{t}</span>)}
       </div>
       <p className="mt-3 text-[12px] text-text-3">
-        Pass-rate difference, candidate minus current, in percentage points (SE {se.toFixed(2)} pp). <Term explain="Non-inferiority: the new version is shown to be no worse than the current one, within a set margin.">Non-inferior</Term> if the lower bound stays right of the margin.
+        {detail
+          ? <>Pass-rate difference, candidate minus current, in percentage points (SE {se.toFixed(2)} pp). <Term explain="Non-inferiority: the new version is shown to be no worse than the current one, within a set margin.">Non-inferior</Term> if the lower bound stays right of the margin.</>
+          : <>Accuracy of the new version minus today's, in percentage points. The dot is the measured difference; the bar is its likely range. The new version passes if the whole bar stays right of the red tolerance line.</>}
       </p>
     </div>
   );

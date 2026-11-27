@@ -1,15 +1,19 @@
 import { buildLedger, commitSeed, hashObject, type LedgerEntry } from "../engine/hash";
-import { scoreRun, type RunResult } from "../engine/scorer";
+import { scoreRun, withConfirmedFailure, type RunInput, type RunResult } from "../engine/scorer";
 import { claimDeskRun, runMeta } from "../data/results";
 import { evidenceLedgerItems } from "../data/evidence";
 
 export interface EvidencePack { id: string; seed: string; commitment: string; result: RunResult; scoreHash: string; ledger: LedgerEntry[] }
 
+/** The run inputs, with the simulated trap C1 wrongful decline added when the presenter flips the switch. */
+export const runInputFor = (simulate: boolean): RunInput => (simulate ? withConfirmedFailure(claimDeskRun, "critical", "C1") : claimDeskRun);
+
 /** Build evidence pack ep_2026-11-12_7a3d: every hash is computed here from the recorded inputs. */
-export async function buildEvidencePack(): Promise<EvidencePack> {
+export async function buildEvidencePack(simulate = false): Promise<EvidencePack> {
+  const inputs = runInputFor(simulate);
   const commitment = await commitSeed(runMeta.seed);
-  const result = scoreRun(claimDeskRun);
-  const scoreHash = await hashObject({ inputs: claimDeskRun, result });
+  const result = scoreRun(inputs);
+  const scoreHash = await hashObject({ inputs, result });
   const ledger = await buildLedger(evidenceLedgerItems(commitment, scoreHash));
   return { id: runMeta.evidencePack, seed: runMeta.seed, commitment, result, scoreHash, ledger };
 }

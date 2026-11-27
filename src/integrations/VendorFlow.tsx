@@ -5,6 +5,7 @@ import { Button, Callout, Card, CodeBlock, KeyValue, Mono, ProgressBar, StatusPi
 import { ConnectionTest } from "../components/domain";
 import { useApp } from "../context/AppContext";
 import { Field, inputCls } from "./fields";
+import { sd } from "../lib/demoClock";
 
 const STEPS = ["Register", "Install plug-in", "Release gate", "Certify", "Share"];
 
@@ -138,7 +139,7 @@ export function VendorFlow() {
               { k: "Suite", v: "Home claims standard suite" },
               { k: "Version", v: form.version, mono: true },
               { k: "Cases", v: "1,000 fresh, with planted traps" },
-              { k: "Disputed cases", v: "[Partner audit firm] accepted by your customers" },
+              { k: "Disputed cases", v: "An independent audit firm your customers accept" },
             ]} />
             <div className="rounded-lg border border-border bg-bg-subtle p-4 text-[13px]">
               <div className="mb-1 flex items-center gap-2 font-semibold text-text"><Lock className="size-4" aria-hidden />Locked</div>
@@ -150,7 +151,7 @@ export function VendorFlow() {
             <div>
               <div className="mb-1 flex justify-between text-[13px]"><span>{cert === "done" ? "Complete" : "Running locked suite…"}</span><span className="tnum">{certP}%</span></div>
               <ProgressBar value={certP} label="Certification progress" />
-              {cert === "done" && <div className="mt-3"><Callout tone="success" title="Passed Verilo's locked standard suite on Model 5.0">All gates passed. Score [__] (standard-suite results to be confirmed). This is evidence for your customers' model validation, not a guarantee.</Callout></div>}
+              {cert === "done" && <div className="mt-3"><Callout tone="success" title="Passed Verilo's locked standard suite on Model 5.0">All pass/fail checks passed, score 94. This is evidence for your customers' model validation, not a guarantee.</Callout></div>}
             </div>
           )}
         </Card>
@@ -160,7 +161,7 @@ export function VendorFlow() {
         <Card title="Share the certificate" highlight>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_auto]">
             <div>
-              <StatusPill tone="brand" icon={BadgeCheck}>Certified · Model 5.0 · valid to 30 Nov 2027</StatusPill>
+              <StatusPill tone="brand" icon={BadgeCheck}>Certified · Model 5.0 · valid to {sd("30 Nov 2027")}</StatusPill>
               <p className="mt-3 text-[13px]">Means ClaimDesk Agent passed Verilo's locked standard suite for home claims on <Mono>model-5.0-2026-10-14</Mono>. Each insurer can still qualify it on its own signed rules.</p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Mono className="rounded border border-border bg-bg px-2 py-1">verilo.au/cert/cobaltline-claimdesk-5-0</Mono>

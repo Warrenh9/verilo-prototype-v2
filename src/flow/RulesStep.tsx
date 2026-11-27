@@ -32,7 +32,7 @@ function cardRows(c: RuleCard): { label: string; value: string; field?: RuleFiel
 }
 
 export function RulesStep() {
-  const { cards, selectedCard, selectCard, addCard, signCard } = useQualify();
+  const { cards, selectedCard, selectCard, addCard, signCard, floodResolved, setFloodResolved } = useQualify();
   const { persona } = useApp();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ export function RulesStep() {
 
   return (
     <div className="space-y-6">
-      <Card title="Signed rule card" actions={<Button icon={FileUp} size="sm" onClick={() => setLoading(true)} disabled={!persona.can.runQualification} disabledReason="Your role is read-only">Load documents</Button>}>
+      <Card title="Rule card" actions={<Button icon={FileUp} size="sm" onClick={() => setLoading(true)} disabled={!persona.can.runQualification} disabledReason="Your role is read-only">Load documents</Button>}>
         <div role="radiogroup" aria-label="Rule card" className="space-y-2">
           {cards.map((c) => {
             const on = c.card.id === sc.card.id;
@@ -105,7 +105,7 @@ export function RulesStep() {
 
       {sc.origin === "demo" ? (
         <Card title="Cross-check by a second extractor">
-          <p className="mb-3 text-[13px] text-text-3">{crossCheck.extractorA} drafted the card. {crossCheck.extractorB}, from a different provider, extracted it independently. {crossCheck.agreed} fields agreed; 1 differed.</p>
+          <p className="mb-3 text-[13px] text-text-3">{crossCheck.extractorA} drafted the card. {crossCheck.extractorB}, from a different provider, extracted it independently. {crossCheck.agreed} fields agreed; 1 differed. Only the policy owner can settle a difference.</p>
           {crossCheck.differences.map((d) => (
             <div key={d.field} className="rounded-lg border border-[#FEDF89] bg-warning-bg p-4 text-[13px]">
               <div className="mb-2 flex items-center gap-2 font-semibold text-warning"><TriangleAlert className="size-4" aria-hidden />Difference: {d.field}</div>
@@ -113,7 +113,15 @@ export function RulesStep() {
                 <div><div className="text-[12px] text-text-3">Extractor A</div><div className="text-text">{d.a}</div></div>
                 <div><div className="text-[12px] text-text-3">Extractor B</div><div className="text-text">{d.b}</div><div className="text-[12px] text-text-3">{d.cause}</div></div>
               </div>
-              <div className="mt-3 border-t border-[#FEDF89] pt-2"><StatusPill tone="success">Resolved</StatusPill> <span className="ml-1 text-text-2">"{d.resolution}"</span> <span className="text-text-3">— {d.resolvedBy}</span></div>
+              <div className="mt-3 border-t border-[#FEDF89] pt-3">
+                {floodResolved || sc.status === "Signed"
+                  ? <><StatusPill tone="success">Resolved</StatusPill> <span className="ml-1 text-text-2">"{d.resolution}"</span> <span className="text-text-3">— {d.resolvedBy}</span></>
+                  : <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-text-2">Which reading is right?</span>
+                      <Button size="sm" variant="primary" onClick={() => setFloodResolved(true)} disabled={!persona.can.sign} disabledReason="Only the policy owner can resolve a difference">Flood is covered (Extractor A)</Button>
+                      <Button size="sm" disabled disabledReason="Endorsement 07 §3.1 deletes the flood exclusion, so this reading is wrong for this demo">Flood is excluded (Extractor B)</Button>
+                    </div>}
+              </div>
             </div>
           ))}
         </Card>
@@ -123,7 +131,7 @@ export function RulesStep() {
 
       <EnginePreview card={sc} />
 
-      <Card title="Rule card"><CodeBlock code={sc.text} caption={sc.origin === "demo" ? "Signed rule card" : "Rule card built from loaded documents"} /></Card>
+      <Card title="Rule card as code"><CodeBlock code={sc.text} caption={sc.origin === "demo" ? "Machine-readable rule card (what the test code checks against)" : "Rule card built from loaded documents"} /></Card>
 
       <Card title="Policy owner's signature" highlight={sc.status === "Signed"}>
         {sc.status === "Signed" ? (
@@ -136,7 +144,7 @@ export function RulesStep() {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="max-w-xl text-[13px]">This card must be signed by the claims policy owner before the run can start. Signing records a SHA-256 hash of the card, the signer and the time.</p>
-            <Button variant="primary" icon={PenLine} loading={signing} onClick={sign} disabled={!persona.can.sign} disabledReason="Only the policy owner can sign">Sign rule card</Button>
+            <Button variant="primary" icon={PenLine} loading={signing} onClick={sign} disabled={!persona.can.sign || (sc.origin === "demo" && !floodResolved)} disabledReason={!persona.can.sign ? "Only the policy owner can sign" : "Resolve the flood difference above first"}>Sign rule card</Button>
           </div>
         )}
       </Card>

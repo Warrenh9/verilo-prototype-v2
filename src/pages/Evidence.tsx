@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { CircleCheck, CircleX, FileDown, FileJson, Link2, RotateCcw } from "lucide-react";
 import { Badge, Button, Callout, Card, KeyValue, Mono, PageHeader, SkeletonRows, StatusPill, Switch, Tabs, Term } from "../components/ui";
 import { useApp } from "../context/AppContext";
-import { buildEvidencePack, downloadJson, replayScoreHash, type EvidencePack } from "../lib/evidencePack";
+import { buildEvidencePack, downloadJson, replayScoreHash, runInputFor, type EvidencePack } from "../lib/evidencePack";
 import { verifyLedger, verifySeed, type EntryCheck, type LedgerEntry } from "../engine/hash";
 import { standardsMapping } from "../data/evidence";
 import { runMeta } from "../data/results";
 import { cn } from "../lib/cn";
+import { sd } from "../lib/demoClock";
+import { useQualify } from "../context/QualifyContext";
+import { decisionWord } from "../flow/DecisionStep";
 
 const TAMPER_INDEX = 4;
 const fmt = (iso: string) => new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -17,6 +20,7 @@ interface Replay { chainOk: boolean; firstBroken: number | null; seedOk: boolean
 export function EvidencePage() {
   const nav = useNavigate();
   const { persona } = useApp();
+  const { simulate } = useQualify();
   const [pack, setPack] = useState<EvidencePack | null>(null);
   const [tamper, setTamper] = useState(false);
   const [checks, setChecks] = useState<EntryCheck[] | null>(null);
@@ -24,7 +28,7 @@ export function EvidencePage() {
   const [replaying, setReplaying] = useState(false);
   const [tab, setTab] = useState<"ledger" | "standards">("ledger");
 
-  useEffect(() => { buildEvidencePack().then(setPack); }, []);
+  useEffect(() => { buildEvidencePack(simulate).then(setPack); }, [simulate]);
 
   const ledger: LedgerEntry[] = !pack ? [] : tamper
     ? pack.ledger.map((e) => (e.index === TAMPER_INDEX ? { ...e, payload: { ...(e.payload as object), votes: 2730 } } : e))
@@ -35,7 +39,7 @@ export function EvidencePage() {
   const runReplay = async () => {
     if (!pack) return;
     setReplaying(true); setReplay(null);
-    const [chain, seedOk, scoreHash] = await Promise.all([verifyLedger(ledger), verifySeed(pack.seed, pack.commitment), replayScoreHash()]);
+    const [chain, seedOk, scoreHash] = await Promise.all([verifyLedger(ledger), verifySeed(pack.seed, pack.commitment), replayScoreHash(runInputFor(simulate))]);
     await new Promise((r) => setTimeout(r, 900));
     const recorded = (ledger[ledger.length - 1].payload as { scoreHash: string }).scoreHash;
     setReplay({ chainOk: chain.ok, firstBroken: chain.firstBroken, seedOk, scoreHash, identical: chain.ok && scoreHash === recorded });
@@ -54,8 +58,8 @@ export function EvidencePage() {
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
           <div><div className="text-[12px] text-text-3">Evidence pack</div><Mono className="text-[14px] text-text">{runMeta.evidencePack}</Mono></div>
           <div><div className="text-[12px] text-text-3">Run</div><Mono>{runMeta.id}</Mono></div>
-          <div><div className="text-[12px] text-text-3">Decision</div><StatusPill tone="warning">Approved with conditions · 93</StatusPill></div>
-          <div><div className="text-[12px] text-text-3">Sealed</div><span className="text-[13px] text-text">12 Nov 2026 · copy sent to Tallowood audit</span></div>
+          <div><div className="text-[12px] text-text-3">Decision</div>{pack ? <StatusPill tone={pack.result.decision === "Reject" ? "danger" : "warning"}>{decisionWord[pack.result.decision]} · {pack.result.score}</StatusPill> : "…"}</div>
+          <div><div className="text-[12px] text-text-3">Sealed</div><span className="text-[13px] text-text">{sd("12 Nov 2026")} · copy sent to Tallowood audit</span></div>
           <div><div className="text-[12px] text-text-3">Region</div><span className="text-[13px] text-text">Australia</span></div>
         </div>
       </Card>
@@ -117,8 +121,8 @@ export function EvidencePage() {
             <Card title="Score">
               {!pack ? <SkeletonRows rows={2} /> : (
                 <KeyValue items={[
-                  { k: "Raw score", v: `${pack.result.rawScore} (CI ${pack.result.ciDetail[0]}–${pack.result.ciDetail[1]})` },
-                  { k: "Decision", v: "Approved with conditions" },
+                  { k: "Score", v: pack.result.capped ? `${pack.result.score} (capped; ${pack.result.rawScore} before the cap)` : `${pack.result.rawScore} (likely ${pack.result.ciDetail[0]}–${pack.result.ciDetail[1]})` },
+                  { k: "Decision", v: decisionWord[pack.result.decision] },
                   { k: "Score hash", v: <Mono className="break-all text-[11px]">{pack.scoreHash}</Mono> },
                 ]} />
               )}
@@ -129,16 +133,15 @@ export function EvidencePage() {
 
       {tab === "standards" && (
         <div className="space-y-6">
-          <Callout tone="info">Evidence is mapped to standards to support your model validation. Control references are placeholders to be confirmed against each standard.</Callout>
+          <Callout tone="info">Illustrative mapping of the evidence in this pack to each standard's requirement areas. Clause-level references are confirmed with your compliance team at onboarding.</Callout>
           {standardsMapping.map((s) => (
             <Card key={s.standard} title={s.standard} padded={false}>
               <table className="w-full text-[13px]">
-                <thead className="bg-bg-subtle text-left text-text-3"><tr><th className="h-10 px-4 font-medium">Control</th><th className="px-4 font-medium">Topic</th><th className="px-4 font-medium">Supporting evidence</th></tr></thead>
+                <thead className="bg-bg-subtle text-left text-text-3"><tr><th className="h-10 px-4 font-medium">Requirement area</th><th className="px-4 font-medium">Supporting evidence</th></tr></thead>
                 <tbody>
                   {s.items.map((it) => (
                     <tr key={it.topic} className="border-t border-border">
-                      <td className="h-11 px-4"><Mono>{it.control}</Mono></td>
-                      <td className="px-4 text-text">{it.topic}</td>
+                      <td className="h-11 px-4 text-text">{it.topic}</td>
                       <td className="px-4 py-2"><div className="flex flex-wrap gap-1.5">{it.evidence.map((ev) => <Badge key={ev}><Link2 className="size-3" aria-hidden />{ev}</Badge>)}</div></td>
                     </tr>
                   ))}

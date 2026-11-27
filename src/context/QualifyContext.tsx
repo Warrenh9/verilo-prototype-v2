@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { RuleCard } from "../engine/types";
-import { demoRuleCard, RULE_CARD_TEXT, signature } from "../data/policy";
+import { demoRuleCard, RULE_CARD_TEXT } from "../data/policy";
 import { hashObject } from "../engine/hash";
 
 export interface CardClause { id: string; text: string; source: string; deletedBy?: string; insertedBy?: string }
@@ -40,6 +40,12 @@ interface QualifyState {
   sealed: boolean;
   setSealed: (v: boolean) => void;
   setMaxStep: (n: number) => void;
+  /** Policy owner has resolved the extractors' flood difference on the demo card. */
+  floodResolved: boolean;
+  setFloodResolved: (v: boolean) => void;
+  /** Decision page "Simulate one critical failure" switch; drives the board report and evidence too. */
+  simulate: boolean;
+  setSimulate: (v: boolean) => void;
 }
 
 const Ctx = createContext<QualifyState | null>(null);
@@ -54,20 +60,23 @@ export function QualifyProvider({ children }: { children: ReactNode }) {
   const [suiteId, setSuiteId] = useState("full");
   const [runState, setRunState] = useState<"idle" | "running" | "done">("idle");
   const [sealed, setSealed] = useState(false);
+  const [floodResolved, setFloodResolved] = useState(false);
+  const [simulate, setSimulate] = useState(false);
   const [cards, setCards] = useState<SignedCard[]>([
-    { card: demoRuleCard, text: RULE_CARD_TEXT, origin: "demo", status: "Signed", signer: signature.signer, signedAt: signature.signedAt, extractor: "Extractor A · Family A, cross-checked by Extractor B · Family B" },
+    // Starts unsigned so the presenter shows the policy owner resolving the flood difference and signing live.
+    { card: demoRuleCard, text: RULE_CARD_TEXT, origin: "demo", status: "Awaiting signature", extractor: "Extractor A · Family A, cross-checked by Extractor B · Family B" },
   ]);
   const [selectedCardId, selectCard] = useState(demoRuleCard.id);
 
-  // The demo card's signature hash is computed for real on load.
+  // A pre-signed demo card's signature hash is computed for real on load.
   useEffect(() => {
     const c = cards[0];
-    if (c.hash) return;
+    if (c.hash || !c.signer || !c.signedAt) return;
     hashObject(signaturePayload(c, c.signer!, c.signedAt!)).then((hash) => setCards((cs) => cs.map((x, i) => (i === 0 ? { ...x, hash } : x))));
   }, [cards]);
 
   const value = useMemo<QualifyState>(() => ({
-    agentId, setAgentId, connectionTested, setConnectionTested, cards, selectedCardId, selectCard, maxStep, setMaxStep, suiteId, setSuiteId, runState, setRunState, sealed, setSealed,
+    agentId, setAgentId, connectionTested, setConnectionTested, cards, selectedCardId, selectCard, maxStep, setMaxStep, suiteId, setSuiteId, runState, setRunState, sealed, setSealed, floodResolved, setFloodResolved, simulate, setSimulate,
     selectedCard: cards.find((c) => c.card.id === selectedCardId),
     addCard: (c) => { setCards((cs) => [...cs.filter((x) => x.card.id !== c.card.id || x.origin === "demo"), c]); selectCard(c.card.id); },
     signCard: async (id, signer) => {
@@ -77,7 +86,7 @@ export function QualifyProvider({ children }: { children: ReactNode }) {
       const hash = await hashObject(signaturePayload(c, signer, signedAt));
       setCards((cs) => cs.map((x) => (x.card.id === id ? { ...x, status: "Signed", signer, signedAt, hash } : x)));
     },
-  }), [agentId, connectionTested, cards, selectedCardId, maxStep, suiteId, runState, sealed]);
+  }), [agentId, connectionTested, cards, selectedCardId, maxStep, suiteId, runState, sealed, floodResolved, simulate]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

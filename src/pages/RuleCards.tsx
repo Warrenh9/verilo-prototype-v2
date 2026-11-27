@@ -17,7 +17,9 @@ export function RuleCardsPage() {
     id: c.card.id, name: `${c.card.title} (from documents)`, version: "draft", status: c.status, signer: c.signer ?? "—",
     date: c.signedAt ? new Date(c.signedAt).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", year: "numeric" }) : "—", agents: "—", text: c.text, hash: c.hash,
   }));
-  const rows: Row[] = [...loaded, ...ruleCards.map((r, i) => ({ ...r, agents: r.agents.join(", ") || "—", text: i === 0 ? demo?.text : undefined, hash: i === 0 ? demo?.hash : undefined }))];
+  const rows: Row[] = [...loaded, ...ruleCards.map((r, i) => i === 0 && demo
+    ? { ...r, status: demo.status, signer: demo.signer ?? "—", date: demo.signedAt ? new Date(demo.signedAt).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", year: "numeric" }) : "—", agents: r.agents.join(", "), text: demo.text, hash: demo.hash }
+    : { ...r, agents: r.agents.join(", ") || "—" })];
 
   return (
     <>

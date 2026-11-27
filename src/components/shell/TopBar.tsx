@@ -5,6 +5,8 @@ import { Logo, Popover, MenuItem, MenuLabel, MenuDivider, Avatar, Badge, Switch 
 import { useApp } from "../../context/AppContext";
 import { personas, workspaces, type PersonaId, type WorkspaceId } from "../../data/personas";
 import { navItems } from "./Sidebar";
+import { sd } from "../../lib/demoClock";
+import { useQualify } from "../../context/QualifyContext";
 
 function useMenu() {
   const [open, setOpen] = useState(false);
@@ -15,6 +17,7 @@ const triggerCls = "inline-flex h-8 items-center gap-1.5 rounded-md border borde
 
 export function TopBar() {
   const { persona, setPersona, workspace, setWorkspace, presenter, setPresenter } = useApp();
+  const { agentId } = useQualify();
   const nav = useNavigate();
   const product = useMenu(), ws = useMenu(), bell = useMenu(), user = useMenu();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -71,7 +74,7 @@ export function TopBar() {
         </Popover>
       </div>
 
-      <Badge tone="info" className="ml-1">Sandbox</Badge>
+      {agentId === "sandbox" && <Badge tone="info" className="ml-1">Sandbox agent</Badge>}
 
       <div className="flex-1" />
 
@@ -106,7 +109,7 @@ export function TopBar() {
               <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
               <div>
                 <div className="font-medium text-text">Model change detected</div>
-                <div className="text-[12px] text-text-3">ClaimDesk Agent moves from Model 4.1 to Model 5.0. Model 4.1 retires 15 Feb 2027.</div>
+                <div className="text-[12px] text-text-3">ClaimDesk Agent moves from Model 4.1 to Model 5.0. {sd("Model 4.1 retires 15 Feb 2027.")}</div>
               </div>
             </div>
           </MenuItem>

@@ -10,6 +10,7 @@ import { DecisionStep } from "./DecisionStep";
 import { suites } from "../data/suite";
 import { useQualify } from "../context/QualifyContext";
 import { agents } from "../data/agents";
+import { sd } from "../lib/demoClock";
 
 export const flowSteps = ["connect", "rules", "run", "decision"] as const;
 const labels = ["Connect", "Rules", "Run", "Decision"];
@@ -72,7 +73,7 @@ export function QualifyFlow() {
               ...(card?.hash ? [{ k: "SHA-256", v: card.hash.slice(0, 16) + "…", mono: true }] : []),
               { k: "Suite", v: i >= 2 ? (() => { const s = suites.find((x) => x.id === q.suiteId)!; return `${s.name} · ${s.cases.toLocaleString()}`; })() : <span className="text-text-3">Chosen at Run</span> },
               { k: "Run", v: q.runState === "done" ? <StatusPill tone="success">Complete</StatusPill> : q.runState === "running" ? <StatusPill tone="info" spin>Running</StatusPill> : <span className="text-text-3">Not started</span> },
-              { k: "Decide by", v: "16 Jan 2027" },
+              { k: "Decide by", v: sd("16 Jan 2027") },
             ]} />
           </Card>
         </aside>

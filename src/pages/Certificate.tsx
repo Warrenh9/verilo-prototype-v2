@@ -3,12 +3,13 @@ import { ArrowLeft } from "lucide-react";
 import { Button, KeyValue, Logo, StatusPill } from "../components/ui";
 import { CertBadge } from "../integrations/VendorFlow";
 import { useApp } from "../context/AppContext";
+import { sd } from "../lib/demoClock";
 
 /** Shareable certificate page (verilo.au/cert/cobaltline-claimdesk-5-0 in production). */
 export function CertificatePage() {
   const nav = useNavigate();
   const { certifiedV5 } = useApp();
-  const v = certifiedV5 ? { model: "Model 5.0", snap: "model-5.0-2026-10-14", to: "30 Nov 2027" } : { model: "Model 4.1", snap: "model-4.1-2026-03-02", to: "15 Feb 2027" };
+  const v = certifiedV5 ? { model: "Model 5.0", snap: "model-5.0-2026-10-14", to: sd("30 Nov 2027") } : { model: "Model 4.1", snap: "model-4.1-2026-03-02", to: sd("15 Feb 2027") };
   return (
     <div className="min-h-screen bg-bg-subtle py-10">
       <div className="mx-auto max-w-[720px] px-6">
@@ -22,7 +23,7 @@ export function CertificatePage() {
             { k: "Pinned version", v: v.snap, mono: true },
             { k: "Model family", v: "Family C" },
             { k: "Suite", v: "Verilo home claims standard suite (locked)" },
-            { k: "Disputed cases reviewed by", v: "[Partner audit firm]" },
+            { k: "Disputed cases reviewed by", v: "An independent audit firm accepted by Cobaltline's customers" },
             { k: "Evidence", v: "Hosted in Australia; replayable evidence pack available to customers" },
           ]} />
           <p className="mt-6 rounded-md bg-bg-subtle p-4 text-[13px]">
